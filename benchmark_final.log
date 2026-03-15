@@ -1,0 +1,79 @@
+/Users/yannkerzreho/Documents/PR/DDFM/benchmarks/run_ltv_comparison.py:34: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
+  data_final = pd.concat([gdp_q, data_m], axis=1).sort_index()
+W0314 20:27:17.790565 7947359 cpp_gen_intrinsics.cc:74] Empty bitcode string provided for eigen. Optimizations relying on this IR will be disabled.
+Traceback (most recent call last):
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/lax/lax.py", line 215, in _broadcast_shapes_uncached
+    return _try_broadcast_shapes(*rank_promoted_shapes, name='broadcast_shapes')
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/lax/lax.py", line 130, in _try_broadcast_shapes
+    raise TypeError(f'{name} got incompatible shapes for broadcasting: '
+                    f'{", ".join(map(str, map(tuple, shapes)))}.')
+TypeError: broadcast_shapes got incompatible shapes for broadcasting: (1, 127, 3), (382, 128, 3).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/lax/lax.py", line 193, in broadcast_shapes
+    return _broadcast_shapes_cached(*shapes)
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/util.py", line 271, in wrapper
+    return cached(trace_context(), *args, **kwargs)
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/util.py", line 265, in cached
+    return f(*args, **kwargs)
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/lax/lax.py", line 199, in _broadcast_shapes_cached
+    return _broadcast_shapes_uncached(*shapes)
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/lax/lax.py", line 218, in _broadcast_shapes_uncached
+    raise ValueError(f"Incompatible shapes for broadcasting: shapes={list(shapes)}") from err
+ValueError: Incompatible shapes for broadcasting: shapes=[(127, 3), (382, 128, 3)]
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/lax/lax.py", line 215, in _broadcast_shapes_uncached
+    return _try_broadcast_shapes(*rank_promoted_shapes, name='broadcast_shapes')
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/lax/lax.py", line 130, in _try_broadcast_shapes
+    raise TypeError(f'{name} got incompatible shapes for broadcasting: '
+                    f'{", ".join(map(str, map(tuple, shapes)))}.')
+TypeError: broadcast_shapes got incompatible shapes for broadcasting: (1, 127, 3), (382, 128, 3).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/yannkerzreho/Documents/PR/DDFM/benchmarks/run_ltv_comparison.py", line 111, in run_benchmark
+    ltv_model = training_mgr.fit_hybrid(times, obs, covariates, target_mask=target_mask, em_iters=3, m_epochs=5)
+  File "/Users/yannkerzreho/Documents/PR/DDFM/models/ltv_training.py", line 68, in fit_hybrid
+    Lambda_t = self.model.Lambda_base + delta_L
+               ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/numpy/array_methods.py", line 610, in deferring_binary_op
+    return binary_op(*args)
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/numpy/ufunc_api.py", line 182, in __call__
+    return call(*args)
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/numpy/ufuncs.py", line 1235, in add
+    x, y = promote_args("add", x, y)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/numpy/util.py", line 222, in promote_args
+    return promote_shapes(fun_name, *promote_dtypes(*args))
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/jax/_src/numpy/util.py", line 60, in promote_shapes
+    result_rank = len(lax.broadcast_shapes(*shapes))
+                      ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+ValueError: Incompatible shapes for broadcasting: shapes=[(127, 3), (382, 128, 3)]
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+check and modify parentdir if erro import module
+Starting LTV-DDFM vs Bai & Ng Benchmarks...
+Data shape: (406, 128), dtypes: [dtype('float64')]
+Split 1/2...
+  Fitting PCA...
+  Initializing LTV-DDFM...
+  Training LTV-DDFM...
+Error in split 0: Incompatible shapes for broadcasting: shapes=[(127, 3), (382, 128, 3)]
+Traceback (most recent call last):
+  File "/Users/yannkerzreho/Documents/PR/DDFM/benchmarks/run_ltv_comparison.py", line 146, in <module>
+    run_benchmark()
+    ~~~~~~~~~~~~~^^
+  File "/Users/yannkerzreho/Documents/PR/DDFM/benchmarks/run_ltv_comparison.py", line 133, in run_benchmark
+    all_preds = pd.concat(preds)
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/pandas/core/reshape/concat.py", line 407, in concat
+    objs, keys, ndims = _clean_keys_and_objs(objs, keys)
+                        ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/Users/yannkerzreho/Documents/PR/DDFM/venv_ltv/lib/python3.13/site-packages/pandas/core/reshape/concat.py", line 808, in _clean_keys_and_objs
+    raise ValueError("No objects to concatenate")
+ValueError: No objects to concatenate

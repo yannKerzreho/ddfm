@@ -137,11 +137,24 @@ def get_idio(eps: np.ndarray, idx_no_missings: np.ndarray, min_obs: int = 5) -> 
         to_select = np.hstack((np.array([False]), to_select[:-1] * to_select[1:]))
         if np.sum(to_select) >= min_obs:
             this_eps = eps[to_select, j]
+            mu_eps[j] = np.mean(this_eps)
+            std_eps[j] = np.std(this_eps)
+            if std_eps[j] > 1e-8:
+                cov1_eps = np.cov(this_eps[1:], this_eps[:-1])[0][1]
+                phi[j, j] = cov1_eps / (std_eps[j] ** 2)
         else:
-            raise ValueError(f"Not enough observation ({min_obs}) to estimate idio AR(1) parameters.")
-            # this_eps = self.eps[:, j]
-        mu_eps[j] = np.mean(this_eps)
-        std_eps[j] = np.std(this_eps)
+            # Fallback for sparse data (like quarterly GDP)
+            # Use all available observations even if not consecutive for mean/std
+            avail_mask = idx_no_missings[:, j]
+            if np.sum(avail_mask) >= 2:
+                this_eps = eps[avail_mask, j]
+                mu_eps[j] = np.mean(this_eps)
+                std_eps[j] = np.std(this_eps)
+                phi[j, j] = 0.0 # Assume white noise if too sparse for AR(1)
+            else:
+                mu_eps[j] = 0.0
+                std_eps[j] = 1.0
+                phi[j, j] = 0.0
         cov1_eps = np.cov(this_eps[1:], this_eps[:-1])[0][1]
         phi[j, j] = cov1_eps / (std_eps[j] ** 2)
     return phi, mu_eps, std_eps

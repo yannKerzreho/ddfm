@@ -106,16 +106,22 @@ class BaiNgModels:
             # set it as GDP
             self.target_name = "GDPC1"
             self.target_freq = "Q"
+        else:
+            self.target_name = target_name
+
         if model_name is None:
             self.model_name = "PC"
+        else:
+            self.model_name = model_name
             
         self.staz=staz
         self.standardize=standardize
-        self.model_name=model_name
         self.start_date=start_date
 
         # pre-process data: staz and stand 
         self.data, self.mean, self.sigma = preprocess_data(data, transform_code_final, self.target_name, self.model_name, self.staz, self.standardize, self.start_date)
+        # Force float32 for JAX compatibility
+        self.data = self.data.astype(np.float32)
         self.X_all = self.data.drop(self.target_name, axis=1)
         self.y_all= self.data[self.target_name]
 
@@ -125,7 +131,7 @@ class BaiNgModels:
 
         # input models
         if model_name is None:
-            # PC, SPC, PC2, - see paper bai-ng LA, LASPC, LAPC
+            # PC, SPC, PC2, DFM - see paper bai-ng LA, LASPC, LAPC
             self.model_name = "PC"
         # LARS
         if self.model_name == "LA5":
@@ -244,11 +250,26 @@ class BaiNgModels:
 
             X_ = X_reg[self.cols_select].dropna()
             y_ = y_reg.ffill().loc[X_.index]
-            model = sm.OLS(y_, X_).fit()
-            self.model = model
-            # return model
+            self.model = sm.OLS(y_, X_).fit()
+            
+        if self.model_name == "DFM":
+            from statsmodels.tsa.statespace.dynamic_factor import DynamicFactor
+            # DynamicFactor is very slow on large datasets. Use targeted predictors if many.
+            if X.shape[1] > 20:
+                print(f"  DFM: Selecting top 20 predictors for performance...")
+                corrs = X.corrwith(y.ffill()).abs().sort_values(ascending=False)
+                X_subset = X[corrs.index[:20]]
+            else:
+                X_subset = X
+            
+            dfm_data = pd.concat([y, X_subset], axis=1)
+            self.dfm_cols = dfm_data.columns
+            # DFM usually wants stationary and standardized data
+            dfm_model = DynamicFactor(dfm_data, k_factors=self.n_factors, factor_order=1, error_order=0)
+            # Reduce maxiter for benchmark speed
+            self.res = dfm_model.fit(disp=False, maxiter=50, method='lbfgs')
+            self.model = self.res # For consistency
         
-        # return eigvect
     def predict(self, X, y):
         
         if self.model_name == "LA5":
@@ -260,6 +281,12 @@ class BaiNgModels:
             
             X_reg = pd.concat([y_lags, X_], axis=1).dropna()
             return self.model.predict(X_reg)
+        elif self.model_name == "DFM":
+            # statsmodels predict
+            # We want to predict y based on current X
+            # res.predict() usually does in-sample/out-sample forecasting
+            # To get specific index:
+            return self.res.predict(start=X.index[0], end=X.index[-1])[self.target_name]
         else:
             # LAPC use this as well
             if "LAPC" in self.model_name:

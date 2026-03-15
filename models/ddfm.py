@@ -55,14 +55,22 @@ class DDFM(BaseModel):
         # z is the observable
         print("@Info - Note: Sorting data.")
         data.sort_index(inplace=True)
-        self.mean_z = data.mean().values
-        self.sigma_z = data.std().values
+        self.mean_z = data.mean().values.astype(np.float32)
+        self.sigma_z = data.std().values.astype(np.float32)
         self.data = (data - self.mean_z) / self.sigma_z
+        self.data = self.data.astype(np.float32)
         # keep track of the missings locations
         self.bool_miss = self.data.isnull()[lags_input:].values
         self.bool_no_miss = self.bool_miss == False
         # create copies of the original data (needed for training and pre-training)
-        self.data_mod_only_miss, self.data_mod, self.data_tmp = self.data.copy(), self.data.copy(), self.data.copy()
+        # Force copies to be writable and ensure they are NOT just views
+        self.data_mod_only_miss = pd.DataFrame(np.copy(self.data.values), index=self.data.index, columns=self.data.columns)
+        self.data_mod = pd.DataFrame(np.copy(self.data.values), index=self.data.index, columns=self.data.columns)
+        self.data_tmp = pd.DataFrame(np.copy(self.data.values), index=self.data.index, columns=self.data.columns)
+        
+        # Explicitly set write flags
+        for df in [self.data_mod_only_miss, self.data_mod, self.data_tmp]:
+            df.values.setflags(write=True)
         self.z_actual = self.data[lags_input:].values
         # autoencoder structure
         self.lags_input = lags_input
@@ -216,7 +224,11 @@ class DDFM(BaseModel):
         # make prediction
         prediction_iter = self.autoencoder.predict(self.data_tmp.values)
         # update missings
-        self.data_mod_only_miss.values[self.lags_input:][self.bool_miss] = prediction_iter[self.bool_miss]
+        # update missings - use iloc for safer assignment
+        # We need a writable reference
+        data_vals = self.data_mod_only_miss.values
+        data_vals.setflags(write=True)
+        data_vals[self.lags_input:][self.bool_miss] = prediction_iter[self.bool_miss]
         # get idio
         self.eps = self.data_tmp[self.data.columns].values - prediction_iter
         # init counters
@@ -259,7 +271,10 @@ class DDFM(BaseModel):
             # store previous prediction to monitor convergence
             prediction_prev_iter = prediction_iter.copy()
             # update missings
-            self.data_mod_only_miss.values[self.lags_input:][self.bool_miss] = prediction_iter[self.bool_miss]
+            # update missings
+            data_vals = self.data_mod_only_miss.values
+            data_vals.setflags(write=True)
+            data_vals[self.lags_input:][self.bool_miss] = prediction_iter[self.bool_miss]
             # update idio
             self.eps = self.data_mod_only_miss.values[self.lags_input:] - prediction_iter
             iter += 1
